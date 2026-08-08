@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+	<DataCollectors>
+	  <DataCollector friendlyName="XPlat Code Coverage">
+		<Configuration>
+		  <Format>cobertura</Format>
+		  <Include>[Cubusky.Stats]*</Include>
+		  <ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+		  <SingleHit>false</SingleHit>
+		  <IncludeTestAssembly>false</IncludeTestAssembly>
+		  <SkipAutoProps>true</SkipAutoProps>
+		</Configuration>
+	  </DataCollector>
+	</DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
