@@ -1,7 +1,7 @@
 ﻿using Chickensoft.Sync;
 using Chickensoft.Sync.Primitives;
 
-namespace Cubusky.Stats;
+namespace Cubusky.Stats.Core;
 
 public partial interface IStat<TValue>
     : IAutoObject<Stat<TValue>.Binding>,
@@ -276,4 +276,28 @@ internal static class ComparerExtensions
     public static TValue Min<TValue>(this IComparer<TValue> comparer, TValue a, TValue b) => comparer.Compare(a, b) < 0 ? a : b;
     public static TValue Max<TValue>(this IComparer<TValue> comparer, TValue a, TValue b) => comparer.Compare(a, b) > 0 ? a : b;
     public static TValue Clamp<TValue>(this IComparer<TValue> comparer, TValue value, TValue min, TValue max) => comparer.Min(comparer.Max(value, min), max);
+}
+
+public static class StatExtensions
+{
+    public static bool TrySet<TValue>(this Stat<TValue> stat, TValue value, out TValue oldValue)
+    {
+        oldValue = stat.Value;
+        stat.Value = value;
+        return !stat.Comparer.Equals(oldValue, value);
+    }
+
+    public static bool TrySetMin<TValue>(this Stat<TValue> stat, TValue min, out TValue oldMin)
+    {
+        oldMin = stat.Min;
+        stat.Min = min;
+        return !stat.Comparer.Equals(oldMin, min);
+    }
+
+    public static bool TrySetMax<TValue>(this Stat<TValue> stat, TValue max, out TValue oldMax)
+    {
+        oldMax = stat.Max;
+        stat.Max = max;
+        return !stat.Comparer.Equals(oldMax, max);
+    }
 }

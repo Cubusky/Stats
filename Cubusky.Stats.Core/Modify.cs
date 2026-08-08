@@ -1,6 +1,6 @@
 ﻿//using System.Numerics;
 
-//namespace Cubusky.Stats;
+//namespace Cubusky.Stats.Core;
 
 //public enum ArithmeticOperation
 //{
@@ -61,13 +61,5 @@
 //            }
 //        }
 //        return modifiedValue;
-//    }
-//}
-
-//public class Test
-//{
-//    public void ExampleUsage()
-//    {
-//        var modifiableMethod = new ModifiableMethod<int>();
 //    }
 //}

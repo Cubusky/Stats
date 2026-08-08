@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Cubusky.Stats.Generators": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Cubusky.Stats.Core\\Cubusky.Stats.Core.csproj"
+    }
+  }
+}

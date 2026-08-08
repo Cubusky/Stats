@@ -3,7 +3,7 @@ using Chickensoft.Sync;
 using Chickensoft.Sync.Primitives;
 using Cubusky.BuildingBlocks;
 
-namespace Cubusky.Stats;
+namespace Cubusky.Stats.Core;
 
 public partial interface IStat<TValue>
     : IAutoObject<Stat<TValue>.Binding>,
@@ -41,6 +41,7 @@ public partial class Stat<TValue>
     }
     #endregion
 
+    #region Perform
     private Broadcaster OperationBroadcaster => field ??= new Broadcaster(_subject);
     private readonly BoxlessQueue<IOperation<Stat<TValue>>> _operationQueue = new();
 
@@ -69,7 +70,9 @@ public partial class Stat<TValue>
             _subject!.Broadcast(broadcast);
         }
     }
+    #endregion
 
+    #region Binding
     public partial class Binding : IBinding<Stat<TValue>, Binding>
     {
         Binding IBinding<Stat<TValue>, Binding>.On<TBroadcast>(Callback<TBroadcast> callback, Condition<TBroadcast>? condition)
@@ -78,6 +81,7 @@ public partial class Stat<TValue>
             return this;
         }
     }
+    #endregion
 }
 
 public static partial class BindingExtensions

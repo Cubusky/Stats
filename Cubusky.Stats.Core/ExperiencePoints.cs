@@ -4,7 +4,7 @@ using Chickensoft.Sync.Primitives;
 using Cubusky.BuildingBlocks;
 using System.Numerics;
 
-namespace Cubusky.Stats;
+namespace Cubusky.Stats.Core;
 
 public interface IExperiencePoints<TNumber> : IStat<TNumber>,
     IOperator<ExperiencePoints<TNumber>>,
@@ -53,6 +53,7 @@ public partial class ExperiencePoints<TNumber>
     }
     #endregion
 
+    #region Perform
     private Broadcaster OperationBroadcaster => field ??= new Broadcaster(_subject);
     private readonly BoxlessQueue<IOperation<ExperiencePoints<TNumber>>> _operationQueue = new();
 
@@ -76,7 +77,9 @@ public partial class ExperiencePoints<TNumber>
             _subject!.Broadcast(broadcast);
         }
     }
+    #endregion
 
+    #region Binding
     public new Binding Bind() => new(_subject);
 
     public new class Binding : Stat<TNumber>.Binding, IBinding<ExperiencePoints<TNumber>, Binding>
@@ -89,6 +92,7 @@ public partial class ExperiencePoints<TNumber>
             return this;
         }
     }
+    #endregion
 }
 
 public static partial class BindingExtensions

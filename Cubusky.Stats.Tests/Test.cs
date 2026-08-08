@@ -1,4 +1,5 @@
 ﻿using Cubusky.BuildingBlocks;
+using Cubusky.Stats.Core;
 using System.Numerics;
 
 namespace Cubusky.Stats.Tests;
@@ -17,7 +18,8 @@ public class Test
         where TValue : INumberBase<TValue>;
 
     // 3. Define your callbacks
-    private static void IncreaseCallback(in Stat<int> stat, in Increase<int> increase, in IBroadcaster<Stat<int>> broadcaster)
+    private static void IncreaseCallback<TNumber>(in Stat<TNumber> stat, in Increase<TNumber> increase, in IBroadcaster<Stat<TNumber>> broadcaster)
+        where TNumber : INumberBase<TNumber>
     {
         stat.Value += increase.Value;
         broadcaster.Broadcast(increase);
@@ -29,6 +31,16 @@ public class Test
         broadcaster.Broadcast(new DoubleBroadcast<int>(experiencePoints.Value));
         broadcaster.Broadcast(new Increase<int>(experiencePoints.Value));
         //broadcaster.Broadcast(doubleOp); // Does not compile, because DoubleOperation<int> is not a broadcast.
+    }
+
+    public enum Rank
+    {
+        E,
+        D,
+        C,
+        B,
+        A,
+        S
     }
 
     // 4. Use the callbacks in your code
