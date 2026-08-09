@@ -84,7 +84,7 @@ public class Test
         expBinding
             .On(static (in DoubleBroadcast<int> doubleBr) => { })
             .On<int, DoubleBroadcast<int>>(OnDouble)
-            .OnValue(static (int i) => { })
+            .OnValue(static value => { })
             .On(static (in Increase<int> increase) => { })
             .On<int, Increase<int>>(OnIncrease);
 
