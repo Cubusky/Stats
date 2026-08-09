@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
@@ -24,6 +24,10 @@
   <!-- This ensures the library will be packaged as a source generator when we use `dotnet pack` -->
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <ProjectReference Include="..\Cubusky.BuildingBlocks\Cubusky.BuildingBlocks.csproj" />
   </ItemGroup>
 
 </Project>
