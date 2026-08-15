@@ -18,11 +18,11 @@ public readonly record struct IncreaseMax<TNumber>(TNumber Value, bool Recover =
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(increaseMax.Value, nameof(increaseMax.Value));
 
         stat.Max += increaseMax.Value;
+        broadcaster.Broadcast(increaseMax);
+
         if (increaseMax.Recover)
         {
             stat.Value += increaseMax.Value;
         }
-
-        broadcaster.Broadcast(increaseMax);
     }
 }

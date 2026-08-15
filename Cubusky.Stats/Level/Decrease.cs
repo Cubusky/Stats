@@ -13,13 +13,13 @@ public readonly record struct Decrease<TInteger>(TInteger Value)
         Level<TInteger>.Set<Decrease<TInteger>>(Callback);
     }
 
-    public static void Callback(in Level<TInteger> Level, in Decrease<TInteger> decrease, in IBroadcaster<Level<TInteger>> broadcaster)
+    public static void Callback(in Level<TInteger> level, in Decrease<TInteger> decrease, in IBroadcaster<Level<TInteger>> broadcaster)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(decrease.Value, nameof(decrease.Value));
 
-        if (Level.TrySet(Level.Value - decrease.Value, out var oldValue))
+        if (level.TrySet(level.Value - decrease.Value, out var oldValue))
         {
-            broadcaster.Broadcast(new Decrease<TInteger>(oldValue - Level.Value));
+            broadcaster.Broadcast(new Decrease<TInteger>(oldValue - level.Value));
         }
     }
 }
