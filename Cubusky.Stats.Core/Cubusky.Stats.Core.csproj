@@ -32,13 +32,6 @@
 
 	<RepositoryType>git</RepositoryType>
 	<RepositoryUrl>https://github.com/Cubusky/Stats.Core</RepositoryUrl>
-	  
-	  
-	  
-	  
-
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,7 +42,6 @@
 
   <ItemGroup>
     <!-- Exclude the output of source generators from the compilation -->
-    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
     <Compile Remove="Templates\**" />
     <EmbeddedResource Remove="Templates\**" />
     <None Remove="Templates\**" />
