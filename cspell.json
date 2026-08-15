@@ -1,0 +1,15 @@
+{
+  "files": [
+    "**/*.*"
+  ],
+  "ignorePaths": [
+    "**/badges/**/*.*",
+    "**/coverage/**/*.*",
+    "**/obj/**/*.*",
+    "**/bin/**/*.*",
+    "**/nupkg/**/*.*"
+  ],
+  "words": [
+    "Cubusky",
+  ]
+}
