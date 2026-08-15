@@ -73,7 +73,7 @@ jobs:
     needs: auto_release
     if: needs.auto_release.outputs.should_release == 'true'
     secrets:
-      NUGET_API_KEY_BUILDINGBLOCKS: ${{ secrets.NUGET_API_KEY_BUILDINGBLOCKS }}
+      NUGET_USER: ${{ secrets.NUGET_USER }}
       GH_BASIC: ${{ secrets.GH_BASIC }}
     with:
       bump: patch
