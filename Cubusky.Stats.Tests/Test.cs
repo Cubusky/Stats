@@ -1,114 +1,121 @@
-﻿using Cubusky.BuildingBlocks;
-using Cubusky.Stats.Core;
-using System.Numerics;
+﻿//using Chickensoft.Sync;
+//using Cubusky.BuildingBlocks;
+//using Cubusky.Stats.Core;
+//using System.Numerics;
 
-namespace Cubusky.Stats.Tests;
+//namespace Cubusky.Stats.Tests;
 
-public class Test
-{
-    // 1. Use IBuildingBlock<TConformance> for both operation and broadcast
-    private readonly record struct Increase<TValue>(TValue Value) : IBuildingBlock<Stat<TValue>>
-        where TValue : INumberBase<TValue>;
+//public class Test
+//{
+//    // 1. Use IBuildingBlock<TConformance> for both operation and broadcast
+//    private readonly record struct Increase<TValue>(TValue Value) : IBuildingBlock<Stat<TValue>>
+//        where TValue : INumberBase<TValue>;
 
-    // 2. Use IOperation<TConformance> and IBroadcast<TConformance> to keep operation and broadcast separate
-    private readonly record struct DoubleOperation<TValue> : IOperation<ExperiencePoints<TValue>>
-        where TValue : INumberBase<TValue>;
+//    // 2. Use IOperation<TConformance> and IBroadcast<TConformance> to keep operation and broadcast separate
+//    private readonly record struct DoubleOperation<TValue> : IOperation<ExperiencePoints<TValue>>
+//        where TValue : INumberBase<TValue>;
 
-    private readonly record struct DoubleBroadcast<TValue>(TValue Value) : IBroadcast<ExperiencePoints<TValue>>
-        where TValue : INumberBase<TValue>;
+//    private readonly record struct DoubleBroadcast<TValue>(TValue Value) : IBroadcast<ExperiencePoints<TValue>>
+//        where TValue : INumberBase<TValue>;
 
-    // 3. Define your callbacks
-    private static void IncreaseCallback<TNumber>(in Stat<TNumber> stat, in Increase<TNumber> increase, in IBroadcaster<Stat<TNumber>> broadcaster)
-        where TNumber : INumberBase<TNumber>
-    {
-        stat.Value += increase.Value;
-        broadcaster.Broadcast(increase);
-    }
+//    // 3. Define your callbacks
+//    private static void IncreaseCallback<TNumber>(in Stat<TNumber> stat, in Increase<TNumber> increase, in IBroadcaster<Stat<TNumber>> broadcaster)
+//        where TNumber : INumberBase<TNumber>
+//    {
+//        stat.Value += increase.Value;
+//        broadcaster.Broadcast(increase);
+//    }
 
-    private static void DoubleCallback(in ExperiencePoints<int> experiencePoints, in DoubleOperation<int> doubleOp, in IBroadcaster<ExperiencePoints<int>> broadcaster)
-    {
-        experiencePoints.Value *= 2;
-        broadcaster.Broadcast(new DoubleBroadcast<int>(experiencePoints.Value));
-        broadcaster.Broadcast(new Increase<int>(experiencePoints.Value));
-        //broadcaster.Broadcast(doubleOp); // Does not compile, because DoubleOperation<int> is not a broadcast.
-    }
+//    private static void DoubleCallback(in ExperiencePoints<int> experiencePoints, in DoubleOperation<int> doubleOp, in IBroadcaster<ExperiencePoints<int>> broadcaster)
+//    {
+//        experiencePoints.Value *= 2;
+//        broadcaster.Broadcast(new DoubleBroadcast<int>(experiencePoints.Value));
+//        broadcaster.Broadcast(new Increase<int>(experiencePoints.Value));
+//        //broadcaster.Broadcast(doubleOp); // Does not compile, because DoubleOperation<int> is not a broadcast.
+//    }
 
-    public enum Rank
-    {
-        E,
-        D,
-        C,
-        B,
-        A,
-        S
-    }
+//    public enum Rank
+//    {
+//        E,
+//        D,
+//        C,
+//        B,
+//        A,
+//        S
+//    }
 
-    // 4. Use the callbacks in your code
-    public void Method()
-    {
-        // Stat
-        var stat = new Stat<int>(5, 0, 10);
-        var sharedStat = stat as IStat<int>;
-        using var statBinding = sharedStat.Bind();
+//    // 4. Use the callbacks in your code
+//    public void Method()
+//    {
+//        // Stat
+//        var stat = new Stat<int>(5, 0, 10);
+//        var sharedStat = stat as IStat<int>;
+//        using var statBinding = sharedStat.Bind();
 
-        // Compiles
-        Stat<int>.Set<Increase<int>>(IncreaseCallback);
-        Stat<int>.Set((OperationCallback<Stat<int>, Increase<int>>)IncreaseCallback);
-        sharedStat.Perform(new Increase<int>(5));
-        statBinding
-            .On(static (in Increase<int> increase) => { })
-            .On<int, Increase<int>>(OnIncrease);
+//        // Compiles
+//        Stat<int>.Set<Increase<int>>(IncreaseCallback);
+//        Stat<int>.Set((OperationCallback<Stat<int>, Increase<int>>)IncreaseCallback);
+//        sharedStat.Perform(new Increase<int>(5));
+//        statBinding
+//            .On(static (in Increase<int> increase) => { })
+//            .On<int, Increase<int>>(OnIncrease);
 
-        //// Does not compile
-        //SyncSubject subject;
-        //using var newStatBinding = new Stat<int>.Binding(subject);
-        //var statBroadcaster = new Stat<int>.Broadcaster(subject);
+//        //// Does not compile
+//        SyncSubject subject = new(this);
+//        //using var newStatBinding = new Stat<int>.Binding(subject);
+//        //var statBroadcaster = new Stat<int>.Broadcaster(subject);
 
-        //Stat<int>.Set<DoubleOperation<int>>(DoubleCallback);
-        //Stat<int>.Set(IncreaseCallback);
-        //sharedStat.Perform(new DoubleOperation<int>());
-        //statBinding.On(static (in DoubleBroadcast<int> doubleBr) => { });
-        //statBinding.On<int, DoubleBroadcast<int>>(OnDouble);
-        //statBinding.On(OnIncrease);
+//        //var statBroadcaster = new Currency<int>.Broadcaster()
+//        //{
+//        //    Subject = subject
+//        //};
 
-        // ExperiencePoints
-        var exp = new ExperiencePoints<int>(0, 100);
-        var sharedExp = exp as IExperiencePoints<int>;
-        using var expBinding = sharedExp.Bind();
 
-        // Compiles
-        ExperiencePoints<int>.Set<DoubleOperation<int>>(DoubleCallback);
-        sharedExp.Perform(new Increase<int>(10));
-        sharedExp.Perform(new DoubleOperation<int>());
+//        //Stat<int>.Set<DoubleOperation<int>>(DoubleCallback);
+//        //Stat<int>.Set(IncreaseCallback);
+//        //sharedStat.Perform(new DoubleOperation<int>());
+//        //statBinding.On(static (in DoubleBroadcast<int> doubleBr) => { });
+//        //statBinding.On<int, DoubleBroadcast<int>>(OnDouble);
+//        //statBinding.On(OnIncrease);
 
-        expBinding
-            .On(static (in DoubleBroadcast<int> doubleBr) => { })
-            .On<int, DoubleBroadcast<int>>(OnDouble)
-            .OnValue(static value => { })
-            .On(static (in Increase<int> increase) => { })
-            .On<int, Increase<int>>(OnIncrease);
+//        // ExperiencePoints
+//        var exp = new ExperiencePoints<int>(0, 100);
+//        var sharedExp = exp as IExperiencePoints<int>;
+//        using var expBinding = sharedExp.Bind();
 
-        //// Does not compile
-        //using var newExpBinding = new ExperiencePoints<int>.Binding(subject);
-        //var expBroadcaster = new ExperiencePoints<int>.Broadcaster(subject);
+//        // Compiles
+//        ExperiencePoints<int>.Set<DoubleOperation<int>>(DoubleCallback);
+//        sharedExp.Perform(new Increase<int>(10));
+//        sharedExp.Perform(new DoubleOperation<int>());
 
-        //// ExperiencePoints broadcasts must come before stat broadcasts.
-        //expBinding
-        //    .OnValue(static (int i) => { })
-        //    .On(static (in DoubleBroadcast<int> doubleBr) => { });
+//        expBinding
+//            .On(static (in DoubleBroadcast<int> doubleBr) => { })
+//            .On<int, DoubleBroadcast<int>>(OnDouble)
+//            .OnValue(static value => { })
+//            .On(static (in Increase<int> increase) => { })
+//            .On<int, Increase<int>>(OnIncrease);
 
-        // Compiles, but is potentially confusing because Increase<int> is not an operation for ExperiencePoints<int>
-        ExperiencePoints<int>.Set<Increase<int>>(IncreaseCallback);
+//        //// Does not compile
+//        //using var newExpBinding = new ExperiencePoints<int>.Binding(subject);
+//        //var expBroadcaster = new ExperiencePoints<int>.Broadcaster(subject);
 
-        // Local functions
-        static void OnIncrease(in Increase<int> increase)
-        {
-            Console.WriteLine($"Stat increased by {increase.Value}");
-        }
+//        //// ExperiencePoints broadcasts must come before stat broadcasts.
+//        //expBinding
+//        //    .OnValue(static (int i) => { })
+//        //    .On(static (in DoubleBroadcast<int> doubleBr) => { });
 
-        static void OnDouble(in DoubleBroadcast<int> doubleBr)
-        {
-            Console.WriteLine($"Exp doubled, new value: {doubleBr.Value}");
-        }
-    }
-}
+//        // Compiles, but is potentially confusing because Increase<int> is not an operation for ExperiencePoints<int>
+//        ExperiencePoints<int>.Set<Increase<int>>(IncreaseCallback);
+
+//        // Local functions
+//        static void OnIncrease(in Increase<int> increase)
+//        {
+//            Console.WriteLine($"Stat increased by {increase.Value}");
+//        }
+
+//        static void OnDouble(in DoubleBroadcast<int> doubleBr)
+//        {
+//            Console.WriteLine($"Exp doubled, new value: {doubleBr.Value}");
+//        }
+//    }
+//}

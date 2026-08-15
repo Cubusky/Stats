@@ -1,10 +1,13 @@
 ﻿using Chickensoft.Sync;
 using Chickensoft.Sync.Primitives;
+using Cubusky.BuildingBlocks;
+using Cubusky.Stats.Generators;
 
 namespace Cubusky.Stats.Core;
 
 public partial interface IStat<TValue>
-    : IAutoObject<Stat<TValue>.Binding>,
+    : IOperator<Stat<TValue>>,
+    IAutoObject<Stat<TValue>.Binding>,
     IDisposable
 {
     TValue Value { get; }
@@ -13,6 +16,7 @@ public partial interface IStat<TValue>
     IComparer<TValue> Comparer { get; }
 }
 
+[Stat]
 public partial class Stat<TValue> : IStat<TValue>,
     IPerform<Stat<TValue>.SetValueOp>,
     IPerform<Stat<TValue>.SetMinOp>,
@@ -44,34 +48,34 @@ public partial class Stat<TValue> : IStat<TValue>,
             throw new ArgumentOutOfRangeException(nameof(min), min, $"Min value {min} cannot be greater than max value {max} on {GetType()} initialization.");
         }
 
-        _subject = new(this);
+        Subject = new(this);
         _value = value;
         _min = min;
         _max = max;
     }
 
     #region Values
-    protected readonly SyncSubject _subject;
+    protected partial SyncSubject Subject => field;
 
     private TValue _value;
     public TValue Value
     {
         get => _value;
-        set => _subject.Perform(new SetValueOp(value));
+        set => Subject.Perform(new SetValueOp(value));
     }
 
     private TValue _min;
     public TValue Min
     {
         get => _min;
-        set => _subject.Perform(new SetMinOp(value));
+        set => Subject.Perform(new SetMinOp(value));
     }
 
     private TValue _max;
     public TValue Max
     {
         get => _max;
-        set => _subject.Perform(new SetMaxOp(value));
+        set => Subject.Perform(new SetMaxOp(value));
     }
 
     public IComparer<TValue> Comparer { get; }
@@ -106,16 +110,16 @@ public partial class Stat<TValue> : IStat<TValue>,
             return;
         }
 
-        _subject.Broadcast(new ValueBroadcast(_value = clamped));
+        Subject.Broadcast(new ValueBroadcast(_value = clamped));
 
         if (Comparer.Equals(_value, Min))
         {
-            _subject.Broadcast(new IsMinBroadcast(_value));
+            Subject.Broadcast(new IsMinBroadcast(_value));
         }
 
         if (Comparer.Equals(_value, Max))
         {
-            _subject.Broadcast(new IsMaxBroadcast(_value));
+            Subject.Broadcast(new IsMaxBroadcast(_value));
         }
     }
 
@@ -127,8 +131,8 @@ public partial class Stat<TValue> : IStat<TValue>,
             return;
         }
 
-        _subject.Broadcast(new MinBroadcast(_min = min));
-        _subject.Perform(new SetValueOp(_value));
+        Subject.Broadcast(new MinBroadcast(_min = min));
+        Subject.Perform(new SetValueOp(_value));
     }
 
     void IPerform<SetMaxOp>.Perform(in SetMaxOp op)
@@ -139,8 +143,8 @@ public partial class Stat<TValue> : IStat<TValue>,
             return;
         }
 
-        _subject.Broadcast(new MaxBroadcast(_max = max));
-        _subject.Perform(new SetValueOp(_value));
+        Subject.Broadcast(new MaxBroadcast(_max = max));
+        Subject.Perform(new SetValueOp(_value));
     }
 
     void IPerform<SyncValueOp>.Perform(in SyncValueOp op)
@@ -185,18 +189,16 @@ public partial class Stat<TValue> : IStat<TValue>,
     #endregion
 
     #region Binding
-    public Binding Bind() => new(_subject);
-    public void ClearBindings() => _subject.ClearBindings();
+    public Binding Bind() => new(Subject);
+    public void ClearBindings() => Subject.ClearBindings();
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        _subject.Dispose();
+        Subject.Dispose();
     }
 
     public partial class Binding : SyncBinding
     {
-        internal Binding(ISyncSubject subject) : base(subject) { }
-
         public Binding OnValue(Action<TValue> callback, Func<TValue, bool>? condition = null)
         {
             AddCallback
