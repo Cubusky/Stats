@@ -102,7 +102,7 @@ Let's break it down:
 
 
 
-## Extendable and Overrideable
+## Extendable and Overridable
 
 
 #### Why a base class doesn't work
