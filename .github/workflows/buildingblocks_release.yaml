@@ -11,7 +11,7 @@ on:
   # Make a release whenever we're told to by another workflow.
   workflow_call:
     secrets:
-      NUGET_API_KEY_BuildingBlocks:
+      NUGET_API_KEY_BUILDINGBLOCKS:
         description: "BuildingBlocks API key for Nuget"
         required: true
       GH_BASIC:
@@ -95,5 +95,5 @@ jobs:
       - name: 🛜 Publish to Nuget
         run: |
           dotnet nuget push "${{ steps.package-path.outputs.package }}" \
-            --api-key "${{ secrets.NUGET_API_KEY_BuildingBlocks }}" \
+            --api-key "${{ secrets.NUGET_API_KEY_BUILDINGBLOCKS }}" \
             --source "https://api.nuget.org/v3/index.json" --skip-duplicate
