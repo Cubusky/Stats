@@ -11,6 +11,12 @@
 	<IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>
 
+  <ItemGroup>
+	<None Include="./README.md" Pack="true" PackagePath="" />
+	<None Include="./LICENSE" Pack="true" PackagePath="" />
+	<None Include="./icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
   <!-- The following libraries include the source generator interfaces and types we need -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" PrivateAssets="all" />

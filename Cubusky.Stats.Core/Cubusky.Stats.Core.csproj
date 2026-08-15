@@ -2,16 +2,57 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+	<EnableDynamicLoading>true</EnableDynamicLoading>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<CopyAllFiles>true</CopyAllFiles>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	<OutputPath>./nupkg</OutputPath>
+	<DebugType>portable</DebugType>
+	<InvariantGlobalization>true</InvariantGlobalization>
+
+	<Title>Stats.Core</Title>
+	<Version>0.0.0-devbuild</Version>
+	<Description>Cubusky.Stats.Core description.</Description>
+	<Copyright>© 2026 Cubusky</Copyright>
+	<Authors>Cubusky</Authors>
+	<Company>Cubusky</Company>
+
+	<PackageId>Cubusky.Stats.Core</PackageId>
+	<PackageReleaseNotes>Stats.Core release.</PackageReleaseNotes>
+	<PackageIcon>icon.png</PackageIcon>
+	<PackageTags />
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+	<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	<PackageProjectUrl>https://www.nuget.org/packages/Cubusky.Stats.Core</PackageProjectUrl>
+
+	<RepositoryType>git</RepositoryType>
+	<RepositoryUrl>https://github.com/Cubusky/Stats.Core</RepositoryUrl>
+	  
+	  
+	  
+	  
 
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
+	<None Include="./README.md" Pack="true" PackagePath="" />
+	<None Include="./LICENSE" Pack="true" PackagePath="" />
+	<None Include="./icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Exclude the output of source generators from the compilation -->
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+    <Compile Remove="Templates\**" />
+    <EmbeddedResource Remove="Templates\**" />
+    <None Remove="Templates\**" />
   </ItemGroup>
 
   <ItemGroup>
