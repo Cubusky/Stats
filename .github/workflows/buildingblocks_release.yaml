@@ -28,7 +28,7 @@ jobs:
   release:
     name: "📦 BuildingBlocks Release"
     runs-on: ubuntu-latest
-    if: github.repository == 'Cubusky/BuildingBlocks'
+    if: github.repository == 'Cubusky/Stats'
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
       DOTNET_NOLOGO: true
