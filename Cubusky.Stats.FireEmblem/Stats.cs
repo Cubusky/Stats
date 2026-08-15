@@ -1,6 +1,4 @@
-﻿namespace Cubusky.Stats;
-
-//public abstract record class Stat(int Value)
+﻿//public abstract record class Stat(int Value)
 //{
 //    public int Value { get; protected set; } = Value;
 
