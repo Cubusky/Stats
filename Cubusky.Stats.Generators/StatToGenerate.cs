@@ -2,29 +2,63 @@
 
 namespace Cubusky.Stats.Generators;
 
-internal readonly record struct StatToGenerate(string ClassName, string TypeName, string? Namespace, StatAttribute StatAttribute)
+internal readonly record struct StatToGenerate(string ClassName, string TypeName, string? Namespace, EquatableArray<ContainingTypeInfo> ContainingTypes, string? BaseTypeName)
 {
-    private static readonly SymbolDisplayFormat GenericTypeFormat = new
+    internal static readonly SymbolDisplayFormat GenericTypeFormat = new
     (
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
         genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
     );
 
+    /// <summary>
+    /// Whether any ancestor of this type is itself annotated with [Stat] (not necessarily the immediate
+    /// base type - a [Stat] ancestor may be separated by ordinary, non-[Stat] classes). Derived types
+    /// inherit the Subject property and just need their Broadcaster/Binding nested types to chain to
+    /// the nearest [Stat] ancestor's Broadcaster/Binding.
+    /// </summary>
+    public bool IsDerived => BaseTypeName is not null;
+
     public string FullTypeName { get; } = Namespace is string @namespace
-        ? $"{Namespace}.{TypeName}"
-        : TypeName;
+        ? $"{Namespace}.{string.Join(".", ContainingTypes.Select(containingType => containingType.Declaration).Append(TypeName))}"
+        : string.Join(".", ContainingTypes.Select(containingType => containingType.Declaration).Append(TypeName));
 
-    public string NamespaceDirective { get; } = Namespace is string @namespace
-        ? $"namespace {@namespace};"
-        : string.Empty;
-
-    public StatToGenerate(INamedTypeSymbol StatSymbol, StatAttribute StatAttribute)
+    public StatToGenerate(INamedTypeSymbol StatSymbol)
         : this
         (
             ClassName: StatSymbol.Name,
             TypeName: StatSymbol.ToDisplayString(GenericTypeFormat),
-            Namespace: StatSymbol.ContainingNamespace?.ToString(),
-            StatAttribute: StatAttribute
+            Namespace: StatSymbol.ContainingNamespace is { IsGlobalNamespace: false } @namespace ? @namespace.ToString() : null,
+            ContainingTypes: GetContainingTypes(StatSymbol),
+            BaseTypeName: FindNearestStatAncestor(StatSymbol.BaseType)
         )
     { }
+
+    private static string? FindNearestStatAncestor(INamedTypeSymbol? baseType)
+    {
+        // Walk the entire base type chain (not just the immediate base type), since a [Stat] ancestor
+        // may be separated from this type by one or more ordinary, non-[Stat] classes.
+        for (var current = baseType; current is not null; current = current.BaseType)
+        {
+            if (current.GetAttributes().Any(StatAttribute.IsStatAttribute))
+            {
+                return current.ToDisplayString(GenericTypeFormat);
+            }
+        }
+
+        return null;
+    }
+
+    private static ContainingTypeInfo[] GetContainingTypes(INamedTypeSymbol StatSymbol)
+    {
+        var containingTypes = new List<ContainingTypeInfo>();
+        for (var containingType = StatSymbol.ContainingType; containingType is not null; containingType = containingType.ContainingType)
+        {
+            containingTypes.Add(ContainingTypeInfo.Create(containingType));
+        }
+
+        // Symbols were walked from innermost to outermost; reverse so the outermost container comes first.
+        containingTypes.Reverse();
+        return [.. containingTypes];
+    }
 }
+

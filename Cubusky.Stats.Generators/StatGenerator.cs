@@ -2,8 +2,10 @@
 using Chickensoft.Sync;
 using Cubusky.BuildingBlocks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Cubusky.Stats.Generators;
 
@@ -33,19 +35,7 @@ public class StatGenerator : IIncrementalGenerator
                 {
                     [global::Microsoft.CodeAnalysis.EmbeddedAttribute]
                     [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-                    internal class {{StatAttribute.TypeName}} : global::System.Attribute
-                    {
-                      public string {{nameof(StatAttribute.SyncSubjectPropertyName)}} { get; }
-                      public string {{nameof(StatAttribute.BroadcasterName)}} { get; }
-                      public string {{nameof(StatAttribute.BindingName)}} { get; }
-
-                      public {{StatAttribute.TypeName}}(string {{nameof(StatAttribute.SyncSubjectPropertyName).Uncapitalize()}}, string {{nameof(StatAttribute.BroadcasterName).Uncapitalize()}} = "{{nameof(StatAttribute.BroadcasterName)[..^4]}}", string {{nameof(StatAttribute.BindingName).Uncapitalize()}} = "{{nameof(StatAttribute.BindingName)[..^4]}}") 
-                      {
-                        {{nameof(StatAttribute.SyncSubjectPropertyName)}} = {{nameof(StatAttribute.SyncSubjectPropertyName).Uncapitalize()}};
-                        {{nameof(StatAttribute.BroadcasterName)}} = {{nameof(StatAttribute.BroadcasterName).Uncapitalize()}};
-                        {{nameof(StatAttribute.BindingName)}} = {{nameof(StatAttribute.BindingName).Uncapitalize()}};
-                      }
-                    }
+                    internal class {{StatAttribute.TypeName}} : global::System.Attribute { }
                 }
                 """);
         });
@@ -53,13 +43,9 @@ public class StatGenerator : IIncrementalGenerator
         IncrementalValuesProvider<StatToGenerate> statsToGenerate = context.SyntaxProvider.ForAttributeWithMetadataName
         (
             StatAttribute.FullTypeName,
-            predicate: static (node, _) => node is ClassDeclarationSyntax,
-            transform: static (ctx, _) =>
-                new StatToGenerate
-                (
-                    (ctx.TargetSymbol as INamedTypeSymbol)!,
-                    StatAttribute.Single(ctx.Attributes)
-                )
+            predicate: static (node, _) => node is ClassDeclarationSyntax
+                or RecordDeclarationSyntax { ClassOrStructKeyword.RawKind: not (int)SyntaxKind.StructKeyword },
+            transform: static (ctx, _) => new StatToGenerate((ctx.TargetSymbol as INamedTypeSymbol)!)
         );
 
         context.RegisterSourceOutput(statsToGenerate, Execute);
@@ -67,12 +53,13 @@ public class StatGenerator : IIncrementalGenerator
 
     private static void Execute(SourceProductionContext context, StatToGenerate statToGenerate)
     {
-        var statAttribute = statToGenerate.StatAttribute;
+        var operationName = nameof(IOperation<>)[1..];
+        var broadcastName = nameof(IBroadcast<>)[1..];
 
-        var operationTypeParameter = 'T' + nameof(IOperation<>)[1..];
-        var broadcastTypeParameter = 'T' + nameof(IBroadcast<>)[1..];
-        var operationParameter = nameof(IOperation<>)[1..].Uncapitalize();
-        var broadcastParameter = nameof(IBroadcast<>)[1..].Uncapitalize();
+        var operationTypeParameter = 'T' + operationName;
+        var broadcastTypeParameter = 'T' + broadcastName;
+        var operationParameter = operationName.Uncapitalize();
+        var broadcastParameter = broadcastName.Uncapitalize();
 
         var operationInterface = $"{nameof(IOperation<>)}<{statToGenerate.TypeName}>";
         var performOpType = $"{nameof(PerformOp<>)}<{statToGenerate.TypeName}>";
@@ -83,10 +70,178 @@ public class StatGenerator : IIncrementalGenerator
         var boxlessQueueType = $"{nameof(BoxlessQueue<>)}<{nameof(IOperation<>)}<{statToGenerate.TypeName}>>";
 
         var broadcasterInterface = $"{nameof(IBroadcaster<>)}<{statToGenerate.TypeName}>";
-        var bindingInterface = $"{nameof(IBinding<,>)}<{statToGenerate.TypeName}, {statToGenerate.TypeName}.{statAttribute.BindingName}>";
+        var bindingInterface = $"{nameof(IBinding<,>)}<{statToGenerate.TypeName}, Binding>";
 
         var callbackParameter = nameof(Callback<>).Uncapitalize();
         var conditionParameter = nameof(Condition<>).Uncapitalize();
+
+        // Blackboard.Has/Get are only inherited (and thus only need `new`) once a [Stat] ancestor already
+        // declares them; root types are the first to declare them and must not redeclare with `new`.
+        var staticNewModifier = statToGenerate.IsDerived ? "new " : "";
+
+        // Root types must implement this partial property themselves (e.g. `=> _subject;`), giving the
+        // compiler a real, type-checked contract instead of a string-named member. Derived types simply
+        // inherit the (already-implemented) property from their nearest [Stat] ancestor, so nothing
+        // needs to be (re)declared here.
+        var subjectDeclaration = statToGenerate.IsDerived
+            ? null
+            : $$"""
+                protected partial {{nameof(SyncSubject)}} Subject { get; }
+                """;
+
+        // Broadcaster/Binding are always fixed-named and fully generator-owned: derived types chain to
+        // their base type's nested type (mirroring the class hierarchy) instead of requiring the same
+        // hand-written boilerplate (base type, constructor) at every level.
+        var broadcasterDeclaration = statToGenerate.IsDerived
+            ? $$"""
+                public new partial class Broadcaster : {{statToGenerate.BaseTypeName}}.Broadcaster, {{broadcasterInterface}}
+                {
+                    internal Broadcaster({{nameof(SyncSubject)}} subject) : base(subject) { }
+
+                    void {{broadcasterInterface}}.{{nameof(IBroadcaster<>.Broadcast)}}<{{broadcastTypeParameter}}>(in {{broadcastTypeParameter}} {{broadcastParameter}})
+                    {
+                        Subject.{{nameof(SyncSubject.Broadcast)}}({{broadcastParameter}});
+                    }
+                }
+                """
+            : $$"""
+                public partial class Broadcaster : {{broadcasterInterface}}
+                {
+                    protected {{nameof(SyncSubject)}} Subject { get; }
+
+                    internal Broadcaster({{nameof(SyncSubject)}} subject) => Subject = subject;
+
+                    void {{broadcasterInterface}}.{{nameof(IBroadcaster<>.Broadcast)}}<{{broadcastTypeParameter}}>(in {{broadcastTypeParameter}} {{broadcastParameter}})
+                    {
+                        Subject.{{nameof(SyncSubject.Broadcast)}}({{broadcastParameter}});
+                    }
+                }
+                """;
+
+        var bindingDeclaration = statToGenerate.IsDerived
+            ? $$"""
+                public new partial class Binding : {{statToGenerate.BaseTypeName}}.Binding, {{bindingInterface}}
+                {
+                    internal Binding({{nameof(ISyncSubject)}} subject) : base(subject) { }
+
+                    Binding {{bindingInterface}}.{{nameof(IBinding<,>.On)}}<{{broadcastTypeParameter}}>({{nameof(Callback<>)}}<{{broadcastTypeParameter}}> {{callbackParameter}}, {{nameof(Condition<>)}}<{{broadcastTypeParameter}}>? {{conditionParameter}})
+                    {
+                        AddCallback({{callbackParameter}}, {{conditionParameter}});
+                        return this;
+                    }
+                }
+                """
+            : $$"""
+                public partial class Binding : {{nameof(SyncBinding)}}, {{bindingInterface}}
+                {
+                    internal Binding(ISyncSubject subject) : base(subject) { }
+
+                    Binding {{bindingInterface}}.{{nameof(IBinding<,>.On)}}<{{broadcastTypeParameter}}>({{nameof(Callback<>)}}<{{broadcastTypeParameter}}> {{callbackParameter}}, {{nameof(Condition<>)}}<{{broadcastTypeParameter}}>? {{conditionParameter}})
+                    {
+                        AddCallback({{callbackParameter}}, {{conditionParameter}});
+                        return this;
+                    }
+                }
+                """;
+
+        // Every block below is self-contained and flush-left (column 0), with only its own *relative*
+        // nesting (e.g. method bodies) indented. This lets us correctly re-indent the whole class body as
+        // a unit once, rather than trying to hand-align dozens of interpolated members at their eventual
+        // (and variable, depending on namespace/containing-type nesting) depth.
+        var classMembers = string.Join("\n\n", new[]
+        {
+            $$"""
+            private static readonly {{nameof(Blackboard)}} __defaultOperationCallbacks = new {{nameof(Blackboard)}}();
+            """,
+            $$"""
+            public static void {{nameof(Blackboard.Set)}}<{{operationTypeParameter}}>({{operationCallbackType}} {{operationParameter}})
+                where {{operationTypeParameter}} : struct, {{operationInterface}}
+            {
+                __defaultOperationCallbacks.{{nameof(Blackboard.Set)}}({{operationParameter}});
+            }
+            """,
+            $$"""
+            public static void {{nameof(Blackboard.Overwrite)}}<{{operationTypeParameter}}>({{operationCallbackType}} {{operationParameter}})
+                where {{operationTypeParameter}} : struct, {{operationInterface}}
+            {
+                __defaultOperationCallbacks.{{nameof(Blackboard.Overwrite)}}({{operationParameter}});
+            }
+            """,
+            $$"""
+            public static {{staticNewModifier}}bool {{nameof(Blackboard.Has)}}<{{operationTypeParameter}}>()
+                where {{operationTypeParameter}} : struct, {{operationInterface}}
+            {
+                return __defaultOperationCallbacks.{{nameof(Blackboard.Has)}}<{{operationCallbackType}}>();
+            }
+            """,
+            $$"""
+            public static {{staticNewModifier}}{{operationCallbackType}} {{nameof(Blackboard.Get)}}<{{operationTypeParameter}}>()
+                where {{operationTypeParameter}} : struct, {{operationInterface}}
+            {
+                return __defaultOperationCallbacks.{{nameof(Blackboard.Get)}}<{{operationCallbackType}}>();
+            }
+            """,
+            subjectDeclaration,
+            $$"""
+            private readonly {{boxlessQueueType}} __operationQueue = new {{boxlessQueueType}}();
+            private Broadcaster? __operationBroadcaster;
+            private Broadcaster __OperationBroadcaster => __operationBroadcaster ??= new Broadcaster(Subject);
+            """,
+            $$"""
+            void {{operatorInterface}}.{{nameof(IOperator<>.Perform)}}<{{operationTypeParameter}}>(in {{operationTypeParameter}} {{operationParameter}})
+            {
+                __operationQueue.Enqueue({{operationParameter}});
+                Subject.{{nameof(ISyncSubject.Perform)}}(new {{performOpType}}(this, __defaultOperationCallbacks, __OperationBroadcaster));
+            }
+            """,
+            $$"""
+            void {{performInterface}}.{{nameof(IPerform<>.Perform)}}(in {{performOpType}} op)
+            {
+                __operationQueue.Dequeue(op);
+            }
+            """,
+            broadcasterDeclaration,
+            bindingDeclaration,
+        }.OfType<string>());
+
+        string classDeclaration = $$"""
+            public partial class {{statToGenerate.TypeName}} : {{performInterface}}, {{operatorInterface}}
+            {
+            {{Indent(classMembers, 1)}}
+            }
+            """;
+
+        // Re-declare each containing type (and, below, the namespace) as a matching partial wrapper so the
+        // generated members land on the actual nested type instead of an unrelated top-level type of the
+        // same name. Containing types are ordered outermost-first, i.e. in the exact order they need to be
+        // opened here.
+        //
+        // The class declaration is indented exactly once for the total wrapper depth (instead of once per
+        // wrapper, which would re-scan/rebuild the whole - and ever-growing - body at every level), while the
+        // (single-line) opening/closing braces are indented directly at their own, already-known level.
+        var openings = new StringBuilder();
+        var level = 0;
+
+        if (statToGenerate.Namespace is string @namespace)
+        {
+            openings.Append(Indent($"namespace {@namespace}\n{{", level++)).Append('\n');
+        }
+
+        foreach (var containingType in statToGenerate.ContainingTypes)
+        {
+            openings.Append(Indent($"partial {containingType.Keyword} {containingType.Declaration}\n{{", level++)).Append('\n');
+        }
+
+        // `level` now equals the total wrapper depth, so it doubles as the class declaration's indent.
+        var indentedClassDeclaration = Indent(classDeclaration, level);
+
+        var closings = new StringBuilder();
+        while (level > 0)
+        {
+            closings.Append(Indent("}", --level)).Append('\n');
+        }
+
+        var body = $"{openings}{indentedClassDeclaration}\n{closings}";
 
         var source = $$"""
             #nullable enable
@@ -94,73 +249,45 @@ public class StatGenerator : IIncrementalGenerator
             using {{nameof(Chickensoft)}}.{{nameof(Chickensoft.Sync)}};
             using {{nameof(Cubusky)}}.{{nameof(BuildingBlocks)}};
 
-            {{statToGenerate.NamespaceDirective}}
-            
-            public partial class {{statToGenerate.TypeName}} : {{performInterface}}, {{operatorInterface}}
-            {
-                private static readonly {{nameof(Blackboard)}} g_DefaultOperationCallbacks = new {{nameof(Blackboard)}}();
-
-                public static void {{nameof(Blackboard.Set)}}<{{operationTypeParameter}}>({{operationCallbackType}} {{operationParameter}})
-                    where {{operationTypeParameter}} : struct, {{operationInterface}}
-                {
-                    g_DefaultOperationCallbacks.{{nameof(Blackboard.Set)}}({{operationParameter}});
-                }
-
-                public static void {{nameof(Blackboard.Overwrite)}}<{{operationTypeParameter}}>({{operationCallbackType}} {{operationParameter}})
-                    where {{operationTypeParameter}} : struct, {{operationInterface}}
-                {
-                    g_DefaultOperationCallbacks.{{nameof(Blackboard.Overwrite)}}({{operationParameter}});
-                }
-
-                public static new bool {{nameof(Blackboard.Has)}}<{{operationTypeParameter}}>()
-                    where {{operationTypeParameter}} : struct, {{operationInterface}}
-                {
-                    return g_DefaultOperationCallbacks.{{nameof(Blackboard.Has)}}<{{operationCallbackType}}>();
-                }
-
-                public static new {{operationCallbackType}} {{nameof(Blackboard.Get)}}<{{operationTypeParameter}}>()
-                    where {{operationTypeParameter}} : struct, {{operationInterface}}
-                {
-                    return g_DefaultOperationCallbacks.{{nameof(Blackboard.Get)}}<{{operationCallbackType}}>();
-                }
-
-                private {{statAttribute.BroadcasterName}}? g_OperationBroadcaster;
-                private {{statAttribute.BroadcasterName}} G_OperationBroadcaster => g_OperationBroadcaster ??= new {{statAttribute.BroadcasterName}}({{statAttribute.SyncSubjectPropertyName}});
-                private readonly {{boxlessQueueType}} g_OperationQueue = new {{boxlessQueueType}}();
-
-                void {{operatorInterface}}.{{nameof(IOperator<>.Perform)}}<{{operationTypeParameter}}>(in {{operationTypeParameter}} {{operationParameter}})
-                {
-                    g_OperationQueue.Enqueue({{operationParameter}});
-                    {{statAttribute.SyncSubjectPropertyName}}.{{nameof(ISyncSubject.Perform)}}(new {{performOpType}}(this, g_DefaultOperationCallbacks, G_OperationBroadcaster));
-                }
-
-                void {{performInterface}}.{{nameof(IPerform<>.Perform)}}(in {{performOpType}} op)
-                {
-                    g_OperationQueue.Dequeue(op);
-                }
-
-                public partial class {{statAttribute.BroadcasterName}} : {{broadcasterInterface}}
-                {
-                    private partial {{nameof(SyncSubject)}}? Subject { get; }
-
-                    void {{broadcasterInterface}}.{{nameof(IBroadcaster<>.Broadcast)}}<{{broadcastTypeParameter}}>(in {{broadcastTypeParameter}} {{broadcastParameter}})
-                    {
-                        Subject!.{{nameof(SyncSubject.Broadcast)}}({{broadcastParameter}});
-                    }
-                }
-
-                public partial class {{statAttribute.BindingName}} : {{bindingInterface}}
-                {
-                    {{statAttribute.BindingName}} {{bindingInterface}}.{{nameof(IBinding<,>.On)}}<{{broadcastTypeParameter}}>({{nameof(Callback<>)}}<{{broadcastTypeParameter}}> {{callbackParameter}}, {{nameof(Condition<>)}}<{{broadcastTypeParameter}}>? {{conditionParameter}})
-                    {
-                        AddCallback({{callbackParameter}}, {{conditionParameter}});
-                        return this;
-                    }
-                }
-            }
+            {{body}}
             """;
 
         context.AddSource($"{statToGenerate.ClassName}.g.cs", source);
+    }
+
+    /// <summary>Indents every non-empty line of <paramref name="text"/> by <paramref name="levels"/> * 4 spaces.</summary>
+    private static string Indent(string text, int levels)
+    {
+        if (levels <= 0 || text.Length == 0)
+        {
+            return text;
+        }
+
+        var prefix = new string(' ', levels * 4);
+        var lines = text.Replace("\r\n", "\n").Split('\n');
+
+        var builder = new StringBuilder(text.Length + prefix.Length * lines.Length);
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i];
+
+            // Don't add trailing whitespace to otherwise-empty lines.
+            if (line.Length > 0)
+            {
+                builder.Append(prefix);
+            }
+
+            builder.Append(line);
+
+            // Every line except the last one was originally followed by a newline; put it back.
+            var isLastLine = i == lines.Length - 1;
+            if (!isLastLine)
+            {
+                builder.Append('\n');
+            }
+        }
+
+        return builder.ToString();
     }
 }
 
