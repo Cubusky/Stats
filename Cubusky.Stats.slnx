@@ -1,5 +1,7 @@
 <Solution>
+  <Project Path="Cubusky.BuildingBlocks.Tests/Cubusky.BuildingBlocks.Tests.csproj" Id="32b91ec8-c0cf-4a20-b6ce-6a04572b9788" />
   <Project Path="Cubusky.BuildingBlocks/Cubusky.BuildingBlocks.csproj" Id="34fe6478-0d6a-410a-b28f-773c582636e8" />
+  <Project Path="Cubusky.Stats.Core.Tests/Cubusky.Stats.Core.Tests.csproj" Id="e0984db5-ef27-4f15-88f3-503bd82023d5" />
   <Project Path="Cubusky.Stats.Core/Cubusky.Stats.Core.csproj" />
   <Project Path="Cubusky.Stats.FireEmblem/Cubusky.Stats.FireEmblem.csproj" Id="c5712d43-6644-4315-a3af-00c72f9ce8da" />
   <Project Path="Cubusky.Stats.Generators/Cubusky.Stats.Generators.csproj" Id="e3500af6-aead-47e5-85cb-52f663a13e99" />
