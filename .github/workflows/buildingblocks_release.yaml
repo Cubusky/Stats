@@ -14,9 +14,6 @@ on:
       NUGET_API_KEY_BUILDINGBLOCKS:
         description: "BuildingBlocks API key for Nuget"
         required: true
-      GH_BASIC:
-        description: "Personal access token (PAT) for GitHub"
-        required: true
     # Input unifies with the workflow dispatch since it's identical.
     inputs:
       bump:
@@ -38,7 +35,6 @@ jobs:
       - name: 🧾 Checkout
         uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GH_BASIC }}
           lfs: true
           submodules: "recursive"
           fetch-depth: 0 # So we can get all tags.
@@ -87,8 +83,6 @@ jobs:
           echo "📦 Found package: $package"
 
       - name: ✨ Create Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_BASIC }}
         run: |
           version="${{ steps.next-version.outputs.version }}"
           gh release create --title "v$version" --generate-notes "$version" \
