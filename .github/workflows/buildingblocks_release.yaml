@@ -46,6 +46,7 @@ jobs:
       - name: 🧾 Checkout
         uses: actions/checkout@v6
         with:
+          token: ${{ github.token }}
           lfs: true
           submodules: "recursive"
           fetch-depth: 0 # So we can get all tags.
@@ -77,6 +78,8 @@ jobs:
           echo "📦 Found package: $package"
 
       - name: ✨ Create Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           version="${{ inputs.version }}"
           gh release create --title "v$version" --generate-notes "$version" \
