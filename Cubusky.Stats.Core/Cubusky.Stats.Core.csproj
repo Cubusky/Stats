@@ -48,8 +48,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cubusky.BuildingBlocks\Cubusky.BuildingBlocks.csproj" />
-
+	<PackageReference Include="Cubusky.BuildingBlocks" Version="0.0.2" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <ProjectReference Include="..\Cubusky.Stats.Generators\Cubusky.Stats.Generators.csproj"
       PrivateAssets="all"
       ReferenceOutputAssembly="false"
