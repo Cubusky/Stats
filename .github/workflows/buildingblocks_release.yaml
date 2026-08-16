@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Validate version input
         id: validate-version
-        uses: robandpdx/check-value-regex@v1
+        uses: robandpdx/check-value-regex@v1.0.2
         with:
           input: ${{ inputs.version }}
           regex: '^\d+\.\d+\.\d+$'
