@@ -3,11 +3,10 @@ on:
   # Make a release whenever the developer wants.
   workflow_dispatch:
     inputs:
-      bump:
+      version:
         type: string
-        description: "major, minor, or patch"
+        description: "The version in the format X.Y.Z to release"
         required: true
-        default: "patch"
   # Make a release whenever we're told to by another workflow.
   workflow_call:
     secrets:
@@ -16,11 +15,10 @@ on:
         required: true
     # Input unifies with the workflow dispatch since it's identical.
     inputs:
-      bump:
+      version:
         type: string
-        description: "major, minor, or patch"
+        description: "The version in the format X.Y.Z to release"
         required: true
-        default: "patch"
 jobs:
   release:
     name: "📦 BuildingBlocks Release"
@@ -32,29 +30,25 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - name: Validate version input
+        id: validate-version
+        uses: robandpdx/check-value-regex@v1
+        with:
+          input: ${{ inputs.version }}
+          regex: '^\d+\.\d+\.\d+$'
+
+      - name: Fail if version input is invalid
+        if: steps.validate-version.outputs.matches == 'false'
+        run: |
+          echo "Invalid version input: ${{ inputs.version }}. Must be in the format 'X.Y.Z'."
+          exit 1
+
       - name: 🧾 Checkout
         uses: actions/checkout@v6
         with:
           lfs: true
           submodules: "recursive"
           fetch-depth: 0 # So we can get all tags.
-
-      - name: 🔎 Read Current Project Version
-        id: current-version
-        run: |
-          echo "tag=$(git tag --sort=v:refname | grep -E '^[^v]' | tail -1)" >> "$GITHUB_OUTPUT"
-
-      - name: 🖨 Print Current Version
-        run: |
-          echo "Current Version: ${{ steps.current-version.outputs.tag }}"
-
-      - name: 🧮 Compute Next Version
-        uses: chickensoft-games/next-godot-csproj-version@v1
-        id: next-version
-        with:
-          project-version: ${{ steps.current-version.outputs.tag }}
-          godot-version: 1.0.0
-          bump: ${{ inputs.bump }}
 
       - uses: actions/setup-dotnet@v5
         name: 💽 Setup .NET SDK
@@ -67,7 +61,7 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "0.0.0-devbuild"
-          replace: ${{ steps.next-version.outputs.version }}
+          replace: ${{ inputs.version }}
           regex: false
           include: Cubusky.BuildingBlocks/Cubusky.BuildingBlocks.csproj
 
@@ -84,7 +78,7 @@ jobs:
 
       - name: ✨ Create Release
         run: |
-          version="${{ steps.next-version.outputs.version }}"
+          version="${{ inputs.version }}"
           gh release create --title "v$version" --generate-notes "$version" \
             "${{ steps.package-path.outputs.package }}"
 
