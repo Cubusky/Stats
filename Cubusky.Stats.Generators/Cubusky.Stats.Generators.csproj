@@ -19,13 +19,13 @@
 
   <!-- The following libraries include the source generator interfaces and types we need -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" PrivateAssets="all" />
-    <PackageReference Include="IsExternalInit" Version="1.0.3">
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="IsExternalInit">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-	<PackageReference Include="Cubusky.BuildingBlocks" Version="0.0.2" />
+	<PackageReference Include="Cubusky.BuildingBlocks" />
   </ItemGroup>
 
   <!-- This ensures the library will be packaged as a source generator when we use `dotnet pack` -->

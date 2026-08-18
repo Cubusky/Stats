@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="Cubusky.BuildingBlocks" Version="0.0.2" />
+	<PackageReference Include="Cubusky.BuildingBlocks" />
   </ItemGroup>
 	
   <ItemGroup>
