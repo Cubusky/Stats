@@ -24,6 +24,11 @@ namespace Cubusky.Stats.Generators;
 )]
 public sealed class StatGenerator : IIncrementalGenerator
 {
+    public static class TrackingName
+    {
+        public const string StatsToGenerate = nameof(StatsToGenerate);
+    }
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Add the marker attribute
@@ -47,7 +52,8 @@ public sealed class StatGenerator : IIncrementalGenerator
             predicate: static (node, _) => node is ClassDeclarationSyntax
                 or RecordDeclarationSyntax { ClassOrStructKeyword.RawKind: not (int)SyntaxKind.StructKeyword },
             transform: static (ctx, _) => new StatToGenerate((ctx.TargetSymbol as INamedTypeSymbol)!)
-        );
+        )
+        .WithTrackingName(TrackingName.StatsToGenerate);
 
         context.RegisterSourceOutput(statsToGenerate, Execute);
     }

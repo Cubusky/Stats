@@ -10,7 +10,7 @@ public readonly record struct StatToGenerate
     string? Namespace,
     ImmutableArray<ContainingTypeInfo> ContainingTypes,
     string? BaseTypeName
-) : IEquatable<StatToGenerate>
+)
 {
     internal static readonly SymbolDisplayFormat GenericTypeFormat = new
     (
