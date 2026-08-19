@@ -1,8 +1,16 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections.Immutable;
 
 namespace Cubusky.Stats.Generators;
 
-internal readonly record struct StatToGenerate(string ClassName, string TypeName, string? Namespace, EquatableArray<ContainingTypeInfo> ContainingTypes, string? BaseTypeName)
+public readonly record struct StatToGenerate
+(
+    string ClassName,
+    string TypeName,
+    string? Namespace,
+    ImmutableArray<ContainingTypeInfo> ContainingTypes,
+    string? BaseTypeName
+) : IEquatable<StatToGenerate>
 {
     internal static readonly SymbolDisplayFormat GenericTypeFormat = new
     (
@@ -28,10 +36,33 @@ internal readonly record struct StatToGenerate(string ClassName, string TypeName
             ClassName: StatSymbol.Name,
             TypeName: StatSymbol.ToDisplayString(GenericTypeFormat),
             Namespace: StatSymbol.ContainingNamespace is { IsGlobalNamespace: false } @namespace ? @namespace.ToString() : null,
-            ContainingTypes: GetContainingTypes(StatSymbol),
+            ContainingTypes: [.. GetContainingTypes(StatSymbol).Reverse()],
             BaseTypeName: FindNearestStatAncestor(StatSymbol.BaseType)
         )
     { }
+
+    /// <inheritdoc/>
+    public readonly bool Equals(StatToGenerate other) =>
+        ClassName == other.ClassName &&
+        TypeName == other.TypeName &&
+        Namespace == other.Namespace &&
+        BaseTypeName == other.BaseTypeName &&
+        ContainingTypes.SequenceEqual(other.ContainingTypes);
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(ClassName);
+        hash.Add(TypeName);
+        hash.Add(Namespace);
+        hash.Add(BaseTypeName);
+        foreach (var containingType in ContainingTypes)
+        {
+            hash.Add(containingType);
+        }
+        return hash.ToHashCode();
+    }
 
     private static string? FindNearestStatAncestor(INamedTypeSymbol? baseType)
     {
@@ -48,17 +79,12 @@ internal readonly record struct StatToGenerate(string ClassName, string TypeName
         return null;
     }
 
-    private static ContainingTypeInfo[] GetContainingTypes(INamedTypeSymbol StatSymbol)
+    private static IEnumerable<ContainingTypeInfo> GetContainingTypes(INamedTypeSymbol StatSymbol)
     {
-        var containingTypes = new List<ContainingTypeInfo>();
         for (var containingType = StatSymbol.ContainingType; containingType is not null; containingType = containingType.ContainingType)
         {
-            containingTypes.Add(ContainingTypeInfo.Create(containingType));
+            yield return ContainingTypeInfo.Create(containingType);
         }
-
-        // Symbols were walked from innermost to outermost; reverse so the outermost container comes first.
-        containingTypes.Reverse();
-        return [.. containingTypes];
     }
 }
 
