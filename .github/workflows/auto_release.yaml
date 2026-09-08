@@ -23,15 +23,16 @@ on:
     types:
       - completed
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   auto_release:
     name: 🦾 Auto-Release
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.release.outputs.should_release }}
-    permissions:
-      contents: write
-      id-token: write
     steps:
       - name: 🧾 Checkout
         uses: actions/checkout@v6
