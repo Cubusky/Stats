@@ -1,0 +1,47 @@
+name: "📦 Create Release"
+description: "Creates a new release of a part of the project"
+inputs:
+  version:
+    type: string
+    description: "The version to release"
+    required: true
+  project:
+    type: string
+    description: "Project name"
+    required: true
+  NUGET_USER:
+    description: "Username for NuGet"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: 📦 Build
+      working-directory: ${{ inputs.project }}
+      run: dotnet build -c Release
+
+    - name: 🔎 Get Package Path
+      id: package-path
+      run: |
+        package=$(find ./${{ inputs.project }}/nupkg -name "*.nupkg")
+        echo "package=$package" >> "$GITHUB_OUTPUT"
+        echo "📦 Found package: $package"
+
+    - name: ✨ Create Release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        version="${{ inputs.version }}"
+        gh release create --title "v$version" --generate-notes "$version" \
+          "${{ steps.package-path.outputs.package }}"
+
+    - name: 🔑 Get NuGet Key
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: ${{ inputs.NUGET_USER }}
+
+    - name: 🛜 Publish to Nuget
+      run: |
+        dotnet nuget push "${{ steps.package-path.outputs.package }}" \
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+          --source "https://api.nuget.org/v3/index.json" --skip-duplicate
