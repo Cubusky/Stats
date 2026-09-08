@@ -1,10 +1,6 @@
-name: "📦 Create Release"
-description: "Creates a new release of a part of the project"
+name: "📦 Publish Package"
+description: "Builds a part of the project and publishes its package to NuGet"
 inputs:
-  version:
-    type: string
-    description: "The version to release"
-    required: true
   project:
     type: string
     description: "Project name"
@@ -13,6 +9,10 @@ inputs:
     type: string
     description: "Username for NuGet"
     required: true
+outputs:
+  package:
+    description: "Path to the built NuGet package"
+    value: ${{ steps.package-path.outputs.package }}
 runs:
   using: "composite"
   steps:
@@ -28,15 +28,6 @@ runs:
         package=$(find ./${{ inputs.project }}/nupkg -name "*.nupkg")
         echo "package=$package" >> "$GITHUB_OUTPUT"
         echo "📦 Found package: $package"
-
-    - name: ✨ Create Release
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      shell: bash
-      run: |
-        version="${{ inputs.version }}"
-        gh release create --title "v$version" --generate-notes "$version" \
-          "${{ steps.package-path.outputs.package }}"
 
     - name: 🔑 Get NuGet Key
       uses: NuGet/login@v1

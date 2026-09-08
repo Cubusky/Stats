@@ -73,23 +73,35 @@ jobs:
           regex: false
           include: "{**/*.csproj,Directory.Packages.props}"
 
-      - name: 📦 Release Stats.Generators
-        uses: ./.github/actions/create_release
+      # Publish all the packages to NuGet ordered from least-dependent to most-dependent.
+      - name: 📦 Publish Stats.Generators
+        id: generators
+        uses: ./.github/actions/publish_package
         with:
           project: "Cubusky.Stats.Generators"
-          version: ${{ steps.next-version.outputs.version }}
           NUGET_USER: ${{ secrets.NUGET_USER }}
 
-      - name: 📦 Release Stats.Core
-        uses: ./.github/actions/create_release
+      - name: 📦 Publish Stats.Core
+        id: core
+        uses: ./.github/actions/publish_package
         with:
           project: "Cubusky.Stats.Core"
-          version: ${{ steps.next-version.outputs.version }}
           NUGET_USER: ${{ secrets.NUGET_USER }}
-  
-      - name: 📦 Release Stats
-        uses: ./.github/actions/create_release
+
+      - name: 📦 Publish Stats
+        id: stats
+        uses: ./.github/actions/publish_package
         with:
           project: "Cubusky.Stats"
-          version: ${{ steps.next-version.outputs.version }}
           NUGET_USER: ${{ secrets.NUGET_USER }}
+
+      # Create a release for GitHub.
+      - name: ✨ Create Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.next-version.outputs.version }}"
+          gh release create --title "v$version" --generate-notes "$version" \
+            "${{ steps.generators.outputs.package }}" \
+            "${{ steps.core.outputs.package }}" \
+            "${{ steps.stats.outputs.package }}"
