@@ -1,0 +1,144 @@
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "Cubusky",
+    "classifications": [ "Stat", "Building Block" ],
+    "identity": "Cubusky.StatBuildingBlock",
+    "name": "Stat Building Block",
+    "shortName": "statblock",
+    "tags": {
+      "language": "C#",
+      "type": "item"
+    },
+    "symbols": {
+      "namespace":{
+        "type": "bind",
+        "binding": "msbuild:RootNamespace",
+        "replaces": "MY_NAMESPACE"
+      },
+      "ClassName":{
+        "type": "parameter",
+        "description": "The name of the code file and struct.",
+        "datatype": "text",
+        "replaces": "STAT_BUILDING_BLOCK",
+        "fileRename": "StatBuildingBlock",
+        "defaultValue": "StatBuildingBlock"
+      },
+      "classNameVariable":{
+        "type": "derived",
+        "valueSource": "ClassName",
+        "valueTransform": "firstLowerCase",
+        "replaces": "stat_building_block"
+      },
+      "Conformance":{
+        "type": "parameter",
+        "description": "The conformance of the stat building block.",
+        "datatype": "text",
+        "replaces": "MY_STAT",
+        "defaultValue": "Stat"
+      },
+      "conformanceVariable":{
+        "type": "derived",
+        "valueSource": "Conformance",
+        "valueTransform": "firstLowerCase",
+        "replaces": "my_stat"
+      },
+      "Constraint":{
+        "type": "parameter",
+        "description": "The type constraint for the stat building block value.",
+        "datatype": "choice",
+        "choices": [
+          {
+            "choice": "none",
+            "displayName": "No constraint",
+            "description": "The stat building block value has no type constraint."
+          },
+          {
+            "choice": "number",
+            "displayName": "Number",
+            "description": "The stat building block value must be a number."
+          },
+          {
+            "choice": "int",
+            "displayName": "Integer",
+            "description": "The stat building block value must be an integer."
+          },
+          {
+            "choice": "float",
+            "displayName": "Floating-point",
+            "description": "The stat building block value must be a floating-point number."
+          }
+        ],
+        "defaultValue": "none"
+      },
+      "genericParameterName":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "MY_VALUE",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'none')",
+              "value": "TValue"
+            },
+            {
+              "condition": "(Constraint == 'number')",
+              "value": "TNumber"
+            },
+            {
+              "condition": "(Constraint == 'int')",
+              "value": "TInteger"
+            },
+            {
+              "condition": "(Constraint == 'float')",
+              "value": "TFloatingPoint"
+            }
+          ]
+        }
+      },
+      "typeConstraint":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* TYPE_CONSTRAINT */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'number')",
+              "value": "\n    where TNumber : INumberBase<TNumber>"
+            },
+            {
+              "condition": "(Constraint == 'int')",
+              "value": "\n    where TInteger : IBinaryInteger<TInteger>"
+            },
+            {
+              "condition": "(Constraint == 'float')",
+              "value": "\n    where TFloatingPoint : IFloatingPoint<TFloatingPoint>"
+            }
+          ]
+        }
+      },
+      "usingNumerics":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* USING_NUMERICS */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint != 'none')",
+              "value": "\nusing System.Numerics;"
+            }
+          ]
+        }
+      }
+    },
+    "forms": {
+      "firstLowerCase": {
+        "identifier": "firstLowerCase"
+      }
+    }
+  }

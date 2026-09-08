@@ -1,0 +1,166 @@
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "Cubusky",
+    "classifications": [ "Stat" ],
+    "identity": "Cubusky.Stat",
+    "name": "Stat",
+    "shortName": "stat",
+    "tags": {
+      "language": "C#",
+      "type": "item"
+    },
+    "symbols": {
+      "namespace":{
+        "type": "bind",
+        "binding": "msbuild:RootNamespace",
+        "replaces": "MY_NAMESPACE"
+      },
+      "ClassName":{
+        "type": "parameter",
+        "description": "The name of the code file and struct.",
+        "datatype": "text",
+        "replaces": "MY_STAT",
+        "fileRename": "Stat",
+        "defaultValue": "MyStat"
+      },
+      "Constraint":{
+        "type": "parameter",
+        "description": "The type constraint for the stat value.",
+        "datatype": "choice",
+        "choices": [
+          {
+            "choice": "none",
+            "displayName": "No constraint",
+            "description": "The stat value has no type constraint."
+          },
+          {
+            "choice": "number",
+            "displayName": "Number",
+            "description": "The stat value must be a number."
+          },
+          {
+            "choice": "int",
+            "displayName": "Integer",
+            "description": "The stat value must be an integer."
+          },
+          {
+            "choice": "float",
+            "displayName": "Floating-point",
+            "description": "The stat value must be a floating-point number."
+          }
+        ],
+        "defaultValue": "none"
+      },
+      "usingNumerics":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* USING_NUMERICS */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint != 'none')",
+              "value": "\nusing System.Numerics;"
+            }
+          ]
+        }
+      },
+      "genericParameterName":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "MY_VALUE",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'none')",
+              "value": "TValue"
+            },
+            {
+              "condition": "(Constraint == 'number')",
+              "value": "TNumber"
+            },
+            {
+              "condition": "(Constraint == 'int')",
+              "value": "TInteger"
+            },
+            {
+              "condition": "(Constraint == 'float')",
+              "value": "TFloatingPoint"
+            }
+          ]
+        }
+      },
+      "typeConstraint":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* TYPE_CONSTRAINT */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'none')",
+              "value": ""
+            },
+            {
+              "condition": "(Constraint == 'number')",
+              "value": "\n    where TNumber : INumberBase<TNumber>"
+            },
+            {
+              "condition": "(Constraint == 'int')",
+              "value": "\n    where TInteger : IBinaryInteger<TInteger>"
+            },
+            {
+              "condition": "(Constraint == 'float')",
+              "value": "\n    where TFloatingPoint : IFloatingPoint<TFloatingPoint>"
+            }
+          ]
+        }
+      },
+      "minParameter":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* MIN_PARAMETER */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'none')",
+              "value": "\n    TValue min,"
+            }
+          ]
+        }
+      },
+      "minParameterZero":{
+        "type": "generated",
+        "generator": "switch",
+        "replaces": "/* MIN_VALUE */",
+        "parameters": {
+          "evaluator": "C++",
+          "datatype": "string",
+          "cases": [
+            {
+              "condition": "(Constraint == 'none')",
+              "value": ", min"
+            },
+            {
+              "condition": "(Constraint == 'number')",
+              "value": ", TNumber.Zero"
+            },
+            {
+              "condition": "(Constraint == 'int')",
+              "value": ", TInteger.Zero"
+            },
+            {
+              "condition": "(Constraint == 'float')",
+              "value": ", TFloatingPoint.Zero"
+            }
+          ]
+        }
+      }
+    }
+  }
