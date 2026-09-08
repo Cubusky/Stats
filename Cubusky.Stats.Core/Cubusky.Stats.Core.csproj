@@ -31,7 +31,7 @@
 	<PackageProjectUrl>https://www.nuget.org/packages/Cubusky.Stats.Core</PackageProjectUrl>
 
 	<RepositoryType>git</RepositoryType>
-	<RepositoryUrl>https://github.com/Cubusky/Stats.Core</RepositoryUrl>
+	<RepositoryUrl>https://github.com/Cubusky/Stats</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
