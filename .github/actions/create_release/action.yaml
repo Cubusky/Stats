@@ -10,6 +10,7 @@ inputs:
     description: "Project name"
     required: true
   NUGET_USER:
+    type: string
     description: "Username for NuGet"
     required: true
 runs:
@@ -17,10 +18,12 @@ runs:
   steps:
     - name: 📦 Build
       working-directory: ${{ inputs.project }}
+      shell: bash
       run: dotnet build -c Release
 
     - name: 🔎 Get Package Path
       id: package-path
+      shell: bash
       run: |
         package=$(find ./${{ inputs.project }}/nupkg -name "*.nupkg")
         echo "package=$package" >> "$GITHUB_OUTPUT"
@@ -29,6 +32,7 @@ runs:
     - name: ✨ Create Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
+      shell: bash
       run: |
         version="${{ inputs.version }}"
         gh release create --title "v$version" --generate-notes "$version" \
@@ -41,6 +45,7 @@ runs:
         user: ${{ inputs.NUGET_USER }}
 
     - name: 🛜 Publish to Nuget
+      shell: bash
       run: |
         dotnet nuget push "${{ steps.package-path.outputs.package }}" \
           --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
