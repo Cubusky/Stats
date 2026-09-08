@@ -51,11 +51,20 @@
 	<PackageReference Include="Cubusky.BuildingBlocks" />
   </ItemGroup>
 	
-  <ItemGroup>
+  <!-- Use ProjectReference for local development -->
+  <ItemGroup Condition="$(Version.StartsWith('0.0.0'))">
     <ProjectReference Include="..\Cubusky.Stats.Generators\Cubusky.Stats.Generators.csproj"
       PrivateAssets="all"
       ReferenceOutputAssembly="false"
       OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Use PackageReference for release builds -->
+  <ItemGroup Condition="!$(Version.StartsWith('0.0.0'))">
+	<PackageReference Include="Cubusky.Stats.Generators"
+	  PrivateAssets="all"
+	  ReferenceOutputAssembly="false"
+	  OutputItemType="Analyzer" />
   </ItemGroup>
 
 </Project>

@@ -44,4 +44,14 @@
     <ProjectReference Include="..\Cubusky.Stats.Core\Cubusky.Stats.Core.csproj" />
   </ItemGroup>
 
+  <!-- Use ProjectReference for local development -->
+  <ItemGroup Condition="$(Version.StartsWith(0.0.0))">
+    <ProjectReference Include="..\Cubusky.Stats.Core\Cubusky.Stats.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Use PackageReference for release builds -->
+  <ItemGroup Condition="!$(Version.StartsWith(0.0.0))">
+	<PackageReference Include="Cubusky.Stats.Core" />
+  </ItemGroup>
+
 </Project>

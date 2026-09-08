@@ -18,5 +18,9 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.0" />
+	<!-- Project Reference Packages -->
+    <PackageVersion Include="Cubusky.Stats.Core" Version="0.0.0-devbuild" />
+    <PackageVersion Include="Cubusky.Stats" Version="0.0.0-devbuild" />
+	<PackageVersion Include="Cubusky.Stats.Generators" Version="0.0.0-devbuild" />
   </ItemGroup>
 </Project>
