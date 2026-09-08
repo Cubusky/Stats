@@ -73,24 +73,23 @@ jobs:
           regex: false
           include: "{**/*.csproj,Directory.Packages.props}"
 
-      - parallel:
-        - name: 📦 Release Stats.Generators
-          uses: ./.github/actions/create_release
-          with:
-            project: "Cubusky.Stats.Generators"
-            version: ${{ steps.next-version.outputs.version }}
-            NUGET_USER: ${{ secrets.NUGET_USER }}
+      - name: 📦 Release Stats.Generators
+        uses: ./.github/actions/create_release
+        with:
+          project: "Cubusky.Stats.Generators"
+          version: ${{ steps.next-version.outputs.version }}
+          NUGET_USER: ${{ secrets.NUGET_USER }}
 
-        - name: 📦 Release Stats.Core
-          uses: ./.github/actions/create_release
-          with:
-            project: "Cubusky.Stats.Core"
-            version: ${{ steps.next-version.outputs.version }}
-            NUGET_USER: ${{ secrets.NUGET_USER }}
+      - name: 📦 Release Stats.Core
+        uses: ./.github/actions/create_release
+        with:
+          project: "Cubusky.Stats.Core"
+          version: ${{ steps.next-version.outputs.version }}
+          NUGET_USER: ${{ secrets.NUGET_USER }}
   
-        - name: 📦 Release Stats
-          uses: ./.github/actions/create_release
-          with:
-            project: "Cubusky.Stats"
-            version: ${{ steps.next-version.outputs.version }}
-            NUGET_USER: ${{ secrets.NUGET_USER }}
+      - name: 📦 Release Stats
+        uses: ./.github/actions/create_release
+        with:
+          project: "Cubusky.Stats"
+          version: ${{ steps.next-version.outputs.version }}
+          NUGET_USER: ${{ secrets.NUGET_USER }}
