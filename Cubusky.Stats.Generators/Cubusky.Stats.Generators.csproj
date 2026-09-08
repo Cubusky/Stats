@@ -6,9 +6,36 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>true</ImplicitUsings>
     
-    <IncludeBuildOutput>false</IncludeBuildOutput>
+	<EnableDynamicLoading>true</EnableDynamicLoading>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<CopyAllFiles>true</CopyAllFiles>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	<OutputPath>./nupkg</OutputPath>
+	<DebugType>portable</DebugType>
+	<InvariantGlobalization>true</InvariantGlobalization>
+
+	<IncludeBuildOutput>false</IncludeBuildOutput>
 	<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 	<IsRoslynComponent>true</IsRoslynComponent>
+	  
+	<Title>Stats.Generators</Title>
+	<Version>0.0.0-devbuild</Version>
+	<Description>Cubusky.Stats.Generators description.</Description>
+	<Copyright>© 2026 Cubusky</Copyright>
+	<Authors>Cubusky</Authors>
+	<Company>Cubusky</Company>
+
+	<PackageId>Cubusky.Stats.Generators</PackageId>
+	<PackageReleaseNotes>Stats.Generators release.</PackageReleaseNotes>
+	<PackageIcon>icon.png</PackageIcon>
+	<PackageTags />
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+	<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	<PackageProjectUrl>https://www.nuget.org/packages/Cubusky.Stats.Generators</PackageProjectUrl>
+
+	<RepositoryType>git</RepositoryType>
+	<RepositoryUrl>https://github.com/Cubusky/Stats</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
