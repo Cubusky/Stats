@@ -74,6 +74,13 @@ jobs:
           include: "{**/*.csproj,Directory.Packages.props}"
 
       # Publish all the packages to NuGet ordered from least-dependent to most-dependent.
+      - name: 📦 Publish Stats
+        id: stats
+        uses: ./.github/actions/publish_package
+        with:
+          project: "Cubusky.Stats"
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+
       - name: 📦 Publish Stats.Generators
         id: generators
         uses: ./.github/actions/publish_package
@@ -81,18 +88,11 @@ jobs:
           project: "Cubusky.Stats.Generators"
           NUGET_USER: ${{ secrets.NUGET_USER }}
 
-      - name: 📦 Publish Stats.Core
-        id: core
+      - name: 📦 Publish Stats.Rpg
+        id: rpg
         uses: ./.github/actions/publish_package
         with:
-          project: "Cubusky.Stats.Core"
-          NUGET_USER: ${{ secrets.NUGET_USER }}
-
-      - name: 📦 Publish Stats
-        id: stats
-        uses: ./.github/actions/publish_package
-        with:
-          project: "Cubusky.Stats"
+          project: "Cubusky.Stats.Rpg"
           NUGET_USER: ${{ secrets.NUGET_USER }}
 
       # Create a release for GitHub.
@@ -102,6 +102,6 @@ jobs:
         run: |
           version="${{ steps.next-version.outputs.version }}"
           gh release create --title "v$version" --generate-notes "$version" \
+            "${{ steps.stats.outputs.package }}" \
             "${{ steps.generators.outputs.package }}" \
-            "${{ steps.core.outputs.package }}" \
-            "${{ steps.stats.outputs.package }}"
+            "${{ steps.rpg.outputs.package }}"

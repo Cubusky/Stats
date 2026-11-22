@@ -5,22 +5,24 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Libraries & Extensions -->
-    <PackageVersion Include="Cubusky.BuildingBlocks" Version="0.0.2" />
+    <PackageVersion Include="Chickensoft.Sync" Version="3.0.1" />
+    <PackageVersion Include="Cubusky.BuildingBlocks" Version="0.1.0" />
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
     <!-- Source Generators -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+    <!-- Analyzers -->
+    <PackageVersion Include="ZeroAlloc.Analyzers" Version="1.11.3" />
     <!-- Testing -->
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0" />
-    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
+    <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
-    <PackageVersion Include="xunit.v3" Version="4.0.0" />
-	<!-- Project Reference Packages -->
-    <PackageVersion Include="Cubusky.Stats.Core" Version="0.0.0-devbuild" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
+    <!-- Project Reference Packages -->
     <PackageVersion Include="Cubusky.Stats" Version="0.0.0-devbuild" />
-	<PackageVersion Include="Cubusky.Stats.Generators" Version="0.0.0-devbuild" />
+    <PackageVersion Include="Cubusky.Stats.Generators" Version="0.0.0-devbuild" />
   </ItemGroup>
 </Project>

@@ -1,19 +1,19 @@
-﻿using Cubusky.BuildingBlocks;
-using Cubusky.Stats.Core;
+#if NET10_0_OR_GREATER
+using Cubusky.BuildingBlocks;
+using Cubusky.BuildingBlocks.Collections;
 using System.Numerics;
 
 namespace Cubusky.Stats.Stat;
 
-public readonly record struct IncreaseMax<TNumber>(TNumber Value, bool Recover = false)
-    : IBuildingBlock<Stat<TNumber>>
+public readonly record struct IncreaseMax<TNumber>(TNumber Value, bool Recover = false) : IOperation<Stat<TNumber>>
     where TNumber : INumberBase<TNumber>
 {
     static IncreaseMax()
     {
-        Stat<TNumber>.Set<IncreaseMax<TNumber>>(Callback);
+        OperationMap.Shared.Set<Stat<TNumber>, IncreaseMax<TNumber>, Stat<TNumber>.Broadcaster>(Callback);
     }
 
-    public static void Callback(in Stat<TNumber> stat, in IncreaseMax<TNumber> increaseMax, in IBroadcaster<Stat<TNumber>> broadcaster)
+    public static void Callback(Stat<TNumber> stat, in IncreaseMax<TNumber> increaseMax, Stat<TNumber>.Broadcaster broadcaster)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(increaseMax.Value, nameof(increaseMax.Value));
 
@@ -26,3 +26,4 @@ public readonly record struct IncreaseMax<TNumber>(TNumber Value, bool Recover =
         }
     }
 }
+#endif

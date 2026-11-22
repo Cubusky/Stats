@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CopyAllFiles>true</CopyAllFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <OutputPath>./nupkg</OutputPath>
+    <DebugType>portable</DebugType>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <Title>Stats.Rpg</Title>
+    <Version>0.0.0-devbuild</Version>
+    <Description>Cubusky.Stats.Rpg description.</Description>
+    <Copyright>© 2026 Cubusky</Copyright>
+    <Authors>Cubusky</Authors>
+    <Company>Cubusky</Company>
+
+    <PackageId>Cubusky.Stats.Rpg</PackageId>
+    <PackageReleaseNotes>Stats.Rpg release.</PackageReleaseNotes>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags />
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://www.nuget.org/packages/Cubusky.Stats.Rpg</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Cubusky/Stats</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="./README.md" Pack="true" PackagePath="" />
+    <None Include="../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="./icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!-- Use ProjectReference for local development -->
+  <ItemGroup Condition="$(Version.StartsWith(0.0.0))">
+    <ProjectReference Include="..\Cubusky.Stats\Cubusky.Stats.csproj" />
+    <ProjectReference Include="..\Cubusky.Stats.Generators\Cubusky.Stats.Generators.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Use PackageReference for release builds -->
+  <ItemGroup Condition="!$(Version.StartsWith(0.0.0))">
+    <PackageReference Include="Cubusky.Stats" />
+    <PackageReference Include="Cubusky.Stats.Generators" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+  </ItemGroup>
+</Project>

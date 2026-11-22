@@ -1,1 +1,1 @@
-Bla bla bla this is a readme it is not finished
+Bla bla bla

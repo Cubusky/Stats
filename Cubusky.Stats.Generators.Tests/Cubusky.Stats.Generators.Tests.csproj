@@ -1,11 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-	<LangVersion>preview</LangVersion>
+    <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-	  
+
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -31,7 +30,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-	<Using Include="Shouldly" />
+    <Using Include="Shouldly" />
   </ItemGroup>
-
 </Project>

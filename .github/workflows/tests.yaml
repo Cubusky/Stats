@@ -48,10 +48,6 @@ jobs:
           working-directory: Cubusky.Stats.Generators.Tests
           run: dotnet test --no-build --verbosity normal
 
-        - name: 🧪 Run Stats.Core Tests
-          working-directory: Cubusky.Stats.Core.Tests
-          run: dotnet test --no-build --verbosity normal
-
         - name: 🧪 Run Stats Tests
           working-directory: Cubusky.Stats.Tests
           run: dotnet test --no-build --verbosity normal

@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Xunit.Sdk;
 
 namespace Cubusky.Stats.Generators.Tests;
 
@@ -8,80 +7,54 @@ public class CachingTest
 {
     private static CancellationToken CT => TestContext.Current.CancellationToken;
 
-    public sealed class StatToGenerateFactory(Func<StatToGenerate> Factory) : IXunitSerializable
-    {
-        public StatToGenerateFactory() : this(null!) { }
+    public static TheoryData<(string, string, string)> StatToGenerateFactories() => new() { { ("Something.Stupid", "Currency<TNumber>", "Stat<TValue>") }, { ("Something.Stupid.Like", "ILoveYou<TInt>", "Currency<TNumber>") } };
 
-        void IXunitSerializable.Serialize(IXunitSerializationInfo info)
-            => info.AddValue(nameof(Factory), Factory);
-
-        void IXunitSerializable.Deserialize(IXunitSerializationInfo info)
-            => Factory = info.GetValue<Func<StatToGenerate>>(nameof(Factory))!;
-
-        public StatToGenerate Create() => Factory();
-    }
-
-    public static TheoryData<StatToGenerateFactory> StatToGenerateFactories()
-        => new()
-        {
-            { new StatToGenerateFactory(() => new StatToGenerate("Stat", "Stat<TValue>", "Something.Stupid", [], null)) },
-            { new StatToGenerateFactory(() => new StatToGenerate("Currency", "Currency<TNumber>", "Something.Stupid", [], "Stat<TValue>")) },
-        };
-
-    [Fact]
-    public void ContainingTypeInfo_SameInput_IsEquivalent()
-    {
-        var containingTypeInfo = new ContainingTypeInfo("class", "Something.Stupid.Stat<TValue>");
-        var other = new ContainingTypeInfo("class", "Something.Stupid.Stat<TValue>");
-        containingTypeInfo.ShouldBeEquivalentTo(other);
-    }
-
+    // Test: are generator inputs equivalent?
+    // Justification: generator inputs need to be equivalent so that generators do not run when input is the same.
     [Theory]
     [MemberData(nameof(StatToGenerateFactories))]
-    internal void StatToGenerate_SameInput_IsEquivalent(StatToGenerateFactory factory)
+    internal void StatToGenerate_SameInput_IsEquivalent((string Namespace, string ClassName, string BaseClassName) factory)
     {
-        var statToGenerate = factory.Create();
-        var other = factory.Create();
+        var statToGenerate = new StatToGenerate(factory.Namespace, factory.ClassName, factory.BaseClassName);
+        var other = new StatToGenerate(factory.Namespace, factory.ClassName, factory.BaseClassName);
         statToGenerate.ShouldBeEquivalentTo(other);
     }
 
+    // Test: are generator results cached upon second compilation?
+    // Justification: keeps compiler performance optimized
     [Fact]
     public void StatGenerator_SameInput_DoesNotRegenerate()
     {
+        const string source = """
+            namespace Example;
+
+            [Cubusky.Stats.Stat]
+            public partial class Health : Cubusky.Stats.Stat<int>
+            {
+                public Health() : base(0, 0, 1) { }
+            }
+            """;
+
         var generator = new StatGenerator().AsSourceGenerator();
-        var compilation = CSharpCompilation.FromSourceCode(SourceText.StatCode);
-        var parseOptions = compilation.SyntaxTrees
-            .OfType<CSharpSyntaxTree>()
-            .Select(static tree => tree.Options)
-            .FirstOrDefault() ?? CSharpParseOptions.Default;
-        var driverOptions = new GeneratorDriverOptions
-        (
-            disabledOutputs: IncrementalGeneratorOutputKind.None,
-            trackIncrementalGeneratorSteps: true
-        );
+        var compilation = CSharpCompilation.FromSourceCode(source);
+        var parseOptions = compilation.SyntaxTrees.OfType<CSharpSyntaxTree>().Select(static tree => tree.Options).FirstOrDefault() ?? CSharpParseOptions.Default;
+        var driverOptions = new GeneratorDriverOptions(disabledOutputs: IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true);
 
-        // First run of the generator
-        var driver = CSharpGeneratorDriver
-            .Create([generator], parseOptions: parseOptions, driverOptions: driverOptions)
-            .RunGenerators(compilation, CT);
-        driver
-            .GetRunResult()
-            .Results
-            .ShouldHaveSingleItem()
-            .TrackedSteps[StatGenerator.TrackingName.StatsToGenerate]
-            .ShouldHaveSingleItem()
-            .ShouldHaveSingleInputWithReason(IncrementalStepRunReason.New)
-            .ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.New);
+        var driver = CSharpGeneratorDriver.Create([generator], parseOptions: parseOptions, driverOptions: driverOptions).RunGenerators(compilation, CT);
+        var firstResult = driver.GetRunResult().Results.ShouldHaveSingleItem();
+        firstResult.Diagnostics.ShouldBeEmpty();
+        var firstSource = firstResult.GeneratedSources.ShouldHaveSingleItem();
+        firstSource.HintName.ShouldBe("Health.g.cs");
+        firstResult.TrackedSteps[StatGenerator.TrackingName.StatsToGenerate].ShouldHaveSingleItem().ShouldHaveSingleInputWithReason(IncrementalStepRunReason.New).ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.New);
+        firstResult.TrackedOutputSteps.Values.SelectMany(static steps => steps).ShouldHaveSingleItem().ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.New);
 
-        // Second run of the generator with the same input
         driver = driver.RunGenerators(compilation.Clone(), CT);
-        driver
-            .GetRunResult()
-            .Results
-            .ShouldHaveSingleItem()
-            .TrackedSteps[StatGenerator.TrackingName.StatsToGenerate]
-            .ShouldHaveSingleItem()
-            .ShouldHaveSingleInputWithReason(IncrementalStepRunReason.Modified)
-            .ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.Unchanged);
+        var secondResult = driver.GetRunResult().Results.ShouldHaveSingleItem();
+        secondResult.Diagnostics.ShouldBeEmpty();
+        var secondSource = secondResult.GeneratedSources.ShouldHaveSingleItem();
+        secondSource.HintName.ShouldBe(firstSource.HintName);
+        secondSource.SourceText.ToString().ShouldBe(firstSource.SourceText.ToString());
+        secondResult.TrackedSteps[StatGenerator.TrackingName.StatsToGenerate].ShouldHaveSingleItem().ShouldHaveSingleInputWithReason(IncrementalStepRunReason.Modified).ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.Unchanged);
+        secondResult.TrackedOutputSteps.Values.SelectMany(static steps => steps).ShouldHaveSingleItem().ShouldHaveSingleInputWithReason(IncrementalStepRunReason.Unchanged).ShouldHaveSingleOutputWithReason(IncrementalStepRunReason.Cached);
     }
 }

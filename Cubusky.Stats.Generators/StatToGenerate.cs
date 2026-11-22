@@ -1,90 +1,34 @@
 ﻿using Microsoft.CodeAnalysis;
-using System.Collections.Immutable;
 
 namespace Cubusky.Stats.Generators;
 
-public readonly record struct StatToGenerate
-(
-    string ClassName,
-    string TypeName,
-    string? Namespace,
-    ImmutableArray<ContainingTypeInfo> ContainingTypes,
-    string? BaseTypeName
-)
+internal readonly record struct StatToGenerate(string Namespace, string ClassName, string BaseClassName)
 {
-    internal static readonly SymbolDisplayFormat GenericTypeFormat = new
-    (
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
-    );
+    // Analyzers can't load Cubusky.Stats at runtime, so these are plain strings instead of typeof(...) lookups.
+    internal const string StatsNamespace = "Cubusky.Stats";
+    internal const string StatAttributeFullName = StatsNamespace + "." + nameof(StatAttribute);
 
-    /// <summary>
-    /// Whether any ancestor of this type is itself annotated with [Stat] (not necessarily the immediate
-    /// base type - a [Stat] ancestor may be separated by ordinary, non-[Stat] classes). Derived types
-    /// inherit the Subject property and just need their Broadcaster/Binding nested types to chain to
-    /// the nearest [Stat] ancestor's Broadcaster/Binding.
-    /// </summary>
-    public bool IsDerived => BaseTypeName is not null;
+    internal static readonly SymbolDisplayFormat GenericTypeFormat = new(typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly, genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
 
-    public string FullTypeName { get; } = Namespace is string @namespace
-        ? $"{Namespace}.{string.Join(".", ContainingTypes.Select(containingType => containingType.Declaration).Append(TypeName))}"
-        : string.Join(".", ContainingTypes.Select(containingType => containingType.Declaration).Append(TypeName));
+    public StatToGenerate(INamedTypeSymbol StatType)
+        : this(Namespace: StatType.ContainingNamespace.ToDisplayString(), ClassName: StatType.ToDisplayString(GenericTypeFormat), BaseClassName: FindNearestStatAncestor(StatType.BaseType)) { }
 
-    public StatToGenerate(INamedTypeSymbol StatSymbol)
-        : this
-        (
-            ClassName: StatSymbol.Name,
-            TypeName: StatSymbol.ToDisplayString(GenericTypeFormat),
-            Namespace: StatSymbol.ContainingNamespace is { IsGlobalNamespace: false } @namespace ? @namespace.ToString() : null,
-            ContainingTypes: [.. GetContainingTypes(StatSymbol).Reverse()],
-            BaseTypeName: FindNearestStatAncestor(StatSymbol.BaseType)
-        )
-    { }
-
-    /// <inheritdoc/>
-    public readonly bool Equals(StatToGenerate other) =>
-        ClassName == other.ClassName &&
-        TypeName == other.TypeName &&
-        Namespace == other.Namespace &&
-        BaseTypeName == other.BaseTypeName &&
-        ContainingTypes.SequenceEqual(other.ContainingTypes);
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        var hash = new HashCode();
-        hash.Add(ClassName);
-        hash.Add(TypeName);
-        hash.Add(Namespace);
-        hash.Add(BaseTypeName);
-        foreach (var containingType in ContainingTypes)
-        {
-            hash.Add(containingType);
-        }
-        return hash.ToHashCode();
-    }
-
-    private static string? FindNearestStatAncestor(INamedTypeSymbol? baseType)
+    private static string FindNearestStatAncestor(INamedTypeSymbol? baseType)
     {
         // Walk the entire base type chain (not just the immediate base type), since a [Stat] ancestor
         // may be separated from this type by one or more ordinary, non-[Stat] classes.
         for (var current = baseType; current is not null; current = current.BaseType)
         {
-            if (current.GetAttributes().Any(StatAttribute.IsStatAttribute))
+            if (IsStatType(current) || current.GetAttributes().Any(IsStatAttribute))
             {
                 return current.ToDisplayString(GenericTypeFormat);
             }
         }
 
-        return null;
+        throw new InvalidOperationException($"Cannot generate a stat for a type that does not inherit from {nameof(Stat<>)}<TValue> or has the {nameof(StatAttribute)}");
     }
 
-    private static IEnumerable<ContainingTypeInfo> GetContainingTypes(INamedTypeSymbol StatSymbol)
-    {
-        for (var containingType = StatSymbol.ContainingType; containingType is not null; containingType = containingType.ContainingType)
-        {
-            yield return ContainingTypeInfo.Create(containingType);
-        }
-    }
+    private static bool IsStatType(INamedTypeSymbol type) => type.OriginalDefinition is { Name: nameof(Stat<>), Arity: 1 } definition && definition.ContainingNamespace.ToDisplayString() == StatsNamespace;
+
+    private static bool IsStatAttribute(AttributeData attributeData) => attributeData.AttributeClass is { Name: nameof(StatAttribute) } attributeClass && attributeClass.ContainingNamespace.ToDisplayString() == StatsNamespace;
 }
-
